@@ -1,3 +1,17 @@
+import gdown
+import os
+
+# ─────────────────────────────────────────────
+#  TÉLÉCHARGEMENT AUTOMATIQUE DU MODÈLE
+# ─────────────────────────────────────────────
+model_path = 'best_model_phase1.h5'
+if not os.path.exists(model_path):
+    print("⬇️ Téléchargement du modèle depuis Google Drive...")
+    file_id = "1E6AQE-DnggKsVgMI-4oKBm5cCCqWMyXh"
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, model_path, quiet=False)
+    print("✅ Modèle téléchargé !")
+
 import streamlit as st
 import numpy as np
 from tensorflow.keras.models import load_model
@@ -5,7 +19,6 @@ from tensorflow.keras.preprocessing import image
 from PIL import Image
 import plotly.graph_objects as go
 import time
-import os
 
 # ─────────────────────────────────────────────
 #  CONFIG PAGE
@@ -24,18 +37,13 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* Base */
 html, body, [class*="css"] {
     font-family: 'DM Sans', sans-serif;
 }
-
-/* Background */
 .stApp {
     background: #0a0a0f;
     color: #f0ede8;
 }
-
-/* Header principal */
 .main-header {
     text-align: center;
     padding: 2.5rem 0 1rem 0;
@@ -61,22 +69,6 @@ html, body, [class*="css"] {
     letter-spacing: 2px;
     text-transform: uppercase;
 }
-
-/* Upload zone */
-.upload-container {
-    background: #13131a;
-    border: 1.5px dashed #2a2a3a;
-    border-radius: 20px;
-    padding: 2rem;
-    text-align: center;
-    transition: border-color 0.3s;
-    margin: 1.5rem 0;
-}
-.upload-container:hover {
-    border-color: #78ffd6;
-}
-
-/* Carte résultat */
 .result-card {
     border-radius: 20px;
     padding: 2rem;
@@ -106,7 +98,6 @@ html, body, [class*="css"] {
 }
 .verdict-text.comestible { color: #2ecc71; }
 .verdict-text.non-comestible { color: #e74c3c; }
-
 .class-badge {
     display: inline-block;
     background: rgba(255,255,255,0.08);
@@ -129,35 +120,6 @@ html, body, [class*="css"] {
     color: #f0ede8;
     font-weight: 700;
 }
-
-/* Stats bar */
-.stats-row {
-    display: flex;
-    gap: 1rem;
-    margin: 1rem 0;
-}
-.stat-box {
-    flex: 1;
-    background: #13131a;
-    border: 1px solid #1e1e2e;
-    border-radius: 14px;
-    padding: 1rem;
-    text-align: center;
-}
-.stat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #a8ff78;
-}
-.stat-label {
-    font-size: 0.75rem;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Info cards */
 .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -186,8 +148,6 @@ html, body, [class*="css"] {
     color: #f0ede8;
     margin-top: 0.2rem;
 }
-
-/* Bouton reset */
 .stButton > button {
     background: linear-gradient(135deg, #a8ff78, #78ffd6) !important;
     color: #0a0a0f !important;
@@ -201,29 +161,18 @@ html, body, [class*="css"] {
     width: 100% !important;
     transition: opacity 0.2s !important;
 }
-.stButton > button:hover {
-    opacity: 0.85 !important;
-}
-
-/* File uploader style */
+.stButton > button:hover { opacity: 0.85 !important; }
 [data-testid="stFileUploader"] {
     background: #13131a !important;
     border-radius: 16px !important;
     border: 1.5px dashed #2a2a3a !important;
     padding: 1rem !important;
 }
-[data-testid="stFileUploader"]:hover {
-    border-color: #78ffd6 !important;
-}
-
-/* Divider */
 .divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, #2a2a3a, transparent);
     margin: 2rem 0;
 }
-
-/* Footer */
 .footer {
     text-align: center;
     color: #333;
@@ -231,8 +180,6 @@ html, body, [class*="css"] {
     padding: 2rem 0 1rem 0;
     letter-spacing: 1px;
 }
-
-/* Masquer éléments Streamlit */
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 0 !important; }
 </style>
@@ -247,12 +194,12 @@ CLASS_NAMES = [
 ]
 
 CLASS_INFO = {
-    'freshapples':    {'emoji': '🍎', 'nom': 'Pomme fraîche',    'conseil': 'Parfaite à consommer !'},
-    'freshbanana':    {'emoji': '🍌', 'nom': 'Banane fraîche',   'conseil': 'Idéale pour manger maintenant.'},
-    'freshoranges':   {'emoji': '🍊', 'nom': 'Orange fraîche',   'conseil': 'Pleine de vitamines C !'},
-    'rottenapples':   {'emoji': '🍎', 'nom': 'Pomme pourrie',    'conseil': 'À jeter immédiatement.'},
-    'rottenbanana':   {'emoji': '🍌', 'nom': 'Banane pourrie',   'conseil': 'Peut servir pour un gâteau.'},
-    'rottenoranges':  {'emoji': '🍊', 'nom': 'Orange pourrie',   'conseil': 'Ne pas consommer.'},
+    'freshapples':   {'emoji': '🍎', 'nom': 'Pomme fraîche',  'conseil': 'Parfaite à consommer !'},
+    'freshbanana':   {'emoji': '🍌', 'nom': 'Banane fraîche', 'conseil': 'Idéale pour manger maintenant.'},
+    'freshoranges':  {'emoji': '🍊', 'nom': 'Orange fraîche', 'conseil': 'Pleine de vitamines C !'},
+    'rottenapples':  {'emoji': '🍎', 'nom': 'Pomme pourrie',  'conseil': 'À jeter immédiatement.'},
+    'rottenbanana':  {'emoji': '🍌', 'nom': 'Banane pourrie', 'conseil': 'Peut servir pour un gâteau.'},
+    'rottenoranges': {'emoji': '🍊', 'nom': 'Orange pourrie', 'conseil': 'Ne pas consommer.'},
 }
 
 BAR_COLORS = {
@@ -269,7 +216,6 @@ BAR_COLORS = {
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_fruit_model():
-    model_path = 'best_model_phase1.h5'
     if not os.path.exists(model_path):
         st.error(f"❌ Modèle introuvable : {model_path}")
         st.stop()
@@ -331,7 +277,7 @@ uploaded = st.file_uploader(
 )
 
 if uploaded:
-    model = load_fruit_model()
+    model   = load_fruit_model()
     img_pil = Image.open(uploaded).convert("RGB")
 
     col1, col2 = st.columns([1, 1], gap="medium")
@@ -348,7 +294,6 @@ if uploaded:
         comestible = 'rotten' not in classe
         card_cls   = 'comestible' if comestible else 'non-comestible'
         verdict    = '✅ COMESTIBLE' if comestible else '❌ NON COMESTIBLE'
-        verdict_emoji = '✅' if comestible else '❌'
 
         st.markdown(f"""
         <div class="result-card {card_cls}">
@@ -364,7 +309,6 @@ if uploaded:
         </div>
         """, unsafe_allow_html=True)
 
-    # Graphique probabilités
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown("#### 📊 Probabilités par classe")
 
@@ -402,13 +346,11 @@ if uploaded:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # Bouton reset
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🔄 Analyser une autre photo"):
         st.rerun()
 
 else:
-    # Placeholder quand pas d'image
     st.markdown("""
     <div style="text-align:center; padding: 3rem 0; color: #333;">
         <div style="font-size: 5rem; margin-bottom: 1rem;">🍎🍌🍊</div>
