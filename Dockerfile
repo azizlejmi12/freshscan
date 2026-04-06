@@ -8,8 +8,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Le lien Drive direct avec option --confirm
-RUN gdown --confirm "1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA" -O best_model_phase1.keras
-
+# Utilisation de l'URL directe de téléchargement au lieu de l'URL de vue
+RUN gdown "https://drive.google.com/uc?id=1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA" -O /app/best_model_phase1.keras && \
+    ls -lh /app/best_model_phase1.keras
 # Vérification immédiate dans les logs Railway
 RUN ls -lh best_model_phase1.keras
 

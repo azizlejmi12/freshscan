@@ -108,11 +108,21 @@ BAR_COLORS = {
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_fruit_model():
-    if not os.path.exists(model_path):
-        st.error(f"❌ Modèle introuvable : {model_path}")
-        st.write("📁 Fichiers dans /app :", os.listdir('/app'))
+    # On force le chemin absolu pour Railway
+    absolute_path = os.path.join(os.getcwd(), 'best_model_phase1.keras')
+    
+    if not os.path.exists(absolute_path):
+        st.error(f"❌ Fichier inexistant à : {absolute_path}")
+        st.write("Contenu du dossier :", os.listdir('.'))
         st.stop()
-    return load_model(model_path)
+        
+    try:
+        # On charge via le chemin absolu nettoyé
+        return load_model(absolute_path)
+    except Exception as e:
+        st.error(f"⚠️ Erreur de format : Le fichier téléchargé est corrompu ou n'est pas un modèle Keras valide.")
+        st.info(f"Détails : {e}")
+        st.stop()
 
 model = load_fruit_model()
 
