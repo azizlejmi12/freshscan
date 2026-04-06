@@ -12,7 +12,7 @@ import gdown
 MODEL_NAME = "best_model_phase1.keras"
 
 # ⚠️ mets ton vrai lien Google Drive ici si besoin
-GDRIVE_URL = "https://drive.google.com/uc?id=TON_FILE_ID"
+GDRIVE_URL = "https://drive.google.com/file/d/1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA/view?usp=sharing"
 
 # ============================================
 # DEBUG
