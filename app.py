@@ -2,7 +2,6 @@ import os
 import streamlit as st
 import numpy as np
 from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
 from PIL import Image
 import plotly.graph_objects as go
 import time
@@ -10,7 +9,6 @@ import time
 # ─────────────────────────────────────────────
 #  CONFIG
 # ─────────────────────────────────────────────
-model_path = 'best_model_phase1.h5'
 st.set_page_config(
     page_title="FreshScan — Détecteur de fruits",
     page_icon="🍎",
@@ -78,7 +76,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-#  CLASSES ET INFOS
+#  CLASSES
 # ─────────────────────────────────────────────
 CLASS_NAMES = [
     'freshapples', 'freshbanana', 'freshoranges',
@@ -104,27 +102,28 @@ BAR_COLORS = {
 }
 
 # ─────────────────────────────────────────────
-#  CHARGEMENT MODÈLE
+#  CHARGEMENT MODÈLE (.keras)
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_fruit_model():
-    # On force le chemin absolu pour Railway
-    absolute_path = os.path.join(os.getcwd(), 'best_model_phase1.h5')
-    
-    if not os.path.exists(absolute_path):
-        st.error(f"❌ Fichier inexistant à : {absolute_path}")
-        st.write("Contenu du dossier :", os.listdir('.'))
-        st.stop()
-        
-    try:
-        # On charge via le chemin absolu nettoyé
-        return load_model(absolute_path)
-    except Exception as e:
-        st.error(f"⚠️ Erreur de format : Le fichier téléchargé est corrompu ou n'est pas un modèle Keras valide.")
-        st.info(f"Détails : {e}")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "best_model_phase1.keras")
+
+    st.write("📂 Dossier :", BASE_DIR)
+    st.write("📁 Fichiers :", os.listdir(BASE_DIR))
+
+    if not os.path.exists(model_path):
+        st.error(f"❌ Modèle introuvable : {model_path}")
         st.stop()
 
-model = load_fruit_model()
+    try:
+        model = load_model(model_path)
+        st.success("✅ Modèle chargé avec succès")
+        return model
+    except Exception as e:
+        st.error("❌ Erreur chargement modèle")
+        st.write(e)
+        st.stop()
 
 # ─────────────────────────────────────────────
 #  PRÉDICTION
@@ -132,15 +131,18 @@ model = load_fruit_model()
 def predict(img_pil, model):
     img = img_pil.resize((224, 224))
     arr = np.array(img) / 255.0
+
     if arr.shape[-1] == 4:
         arr = arr[:, :, :3]
+
     arr = np.expand_dims(arr, axis=0)
     preds = model.predict(arr, verbose=0)[0]
-    idx   = np.argmax(preds)
+
+    idx = np.argmax(preds)
     return CLASS_NAMES[idx], float(preds[idx]) * 100, preds
 
 # ─────────────────────────────────────────────
-#  INTERFACE
+#  UI
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
@@ -149,119 +151,35 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="info-grid">
-    <div class="info-card">
-        <div class="info-icon">🧠</div>
-        <div class="info-title">Modèle</div>
-        <div class="info-value">MobileNetV2</div>
-    </div>
-    <div class="info-card">
-        <div class="info-icon">🎯</div>
-        <div class="info-title">Précision</div>
-        <div class="info-value">99.86%</div>
-    </div>
-    <div class="info-card">
-        <div class="info-icon">🍓</div>
-        <div class="info-title">Classes</div>
-        <div class="info-value">6 types</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-
 uploaded = st.file_uploader(
     "Dépose une photo de fruit ici",
-    type=["jpg", "jpeg", "png", "webp"],
-    label_visibility="visible"
+    type=["jpg", "jpeg", "png", "webp"]
 )
 
+model = None
+
 if uploaded:
+    if model is None:
+        model = load_fruit_model()
+
     img_pil = Image.open(uploaded).convert("RGB")
 
-    col1, col2 = st.columns([1, 1], gap="medium")
+    st.image(img_pil, use_container_width=True)
 
-    with col1:
-        st.image(img_pil, use_container_width=True, caption="Photo analysée")
+    with st.spinner("Analyse en cours..."):
+        time.sleep(0.5)
+        classe, confiance, all_preds = predict(img_pil, model)
 
-    with col2:
-        with st.spinner("Analyse en cours..."):
-            time.sleep(0.5)
-            classe, confiance, all_preds = predict(img_pil, model)
-
-        info       = CLASS_INFO[classe]
-        comestible = 'rotten' not in classe
-        card_cls   = 'comestible' if comestible else 'non-comestible'
-        verdict    = '✅ COMESTIBLE' if comestible else '❌ NON COMESTIBLE'
-
-        st.markdown(f"""
-        <div class="result-card {card_cls}">
-            <span class="verdict-emoji">{info['emoji']}</span>
-            <div class="verdict-text {card_cls}">{verdict}</div>
-            <div class="class-badge">{info['nom'].upper()}</div>
-            <div class="confidence-text">
-                Confiance : <span class="confidence-value">{confiance:.1f}%</span>
-            </div>
-            <div style="margin-top:1rem; color:#888; font-size:0.85rem;">
-                💡 {info['conseil']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### 📊 Probabilités par classe")
+    info = CLASS_INFO[classe]
+    st.success(f"{info['emoji']} {info['nom']} — {confiance:.2f}%")
 
     fig = go.Figure(go.Bar(
         x=[p * 100 for p in all_preds],
         y=CLASS_NAMES,
-        orientation='h',
-        marker=dict(
-            color=[BAR_COLORS[c] for c in CLASS_NAMES],
-            opacity=0.85,
-            line=dict(width=0)
-        ),
-        text=[f"{p*100:.1f}%" for p in all_preds],
-        textposition='outside',
-        textfont=dict(color='#888', size=12)
+        orientation='h'
     ))
-
-    fig.update_layout(
-        paper_bgcolor='#0a0a0f',
-        plot_bgcolor='#13131a',
-        font=dict(family='DM Sans', color='#888'),
-        xaxis=dict(
-            showgrid=True, gridcolor='#1e1e2e',
-            range=[0, 110], ticksuffix='%', color='#555'
-        ),
-        yaxis=dict(color='#aaa', tickfont=dict(size=13)),
-        margin=dict(l=10, r=40, t=20, b=20),
-        height=280,
-        showlegend=False,
-        bargap=0.35
-    )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 Analyser une autre photo"):
-        st.rerun()
-
 else:
-    st.markdown("""
-    <div style="text-align:center; padding: 3rem 0; color: #333;">
-        <div style="font-size: 5rem; margin-bottom: 1rem;">🍎🍌🍊</div>
-        <div style="font-family: 'Syne', sans-serif; font-size: 1.1rem; color: #444;">
-            Charge une photo pour commencer l'analyse
-        </div>
-        <div style="font-size: 0.85rem; color: #333; margin-top: 0.5rem;">
-            Formats acceptés : JPG, PNG, WEBP
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-<div class="footer">
-    FRESHSCAN · MOBILENETV2 · TRANSFER LEARNING · 99.86% ACCURACY
-</div>
-""", unsafe_allow_html=True)
+    st.info("Charge une image pour commencer")
