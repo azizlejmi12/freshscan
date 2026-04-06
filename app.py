@@ -11,41 +11,30 @@ import gdown
 
 MODEL_NAME = "best_model_phase1.keras"
 
-# 👉 (OPTIONNEL) lien Google Drive si problème Railway
-# remplace par ton lien si nécessaire
-GDRIVE_URL = "https://drive.google.com/file/d/1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA/view?usp=sharing"
+# ⚠️ mets ton vrai lien Google Drive ici si besoin
+GDRIVE_URL = "https://drive.google.com/uc?id=TON_FILE_ID"
 
 # ============================================
-# DEBUG (IMPORTANT POUR RAILWAY)
+# DEBUG
 # ============================================
 
-st.write("📁 Fichiers dans le dossier :", os.listdir("."))
+st.write("📁 Fichiers disponibles :", os.listdir("."))
 
 # ============================================
-# TELECHARGEMENT SI MANQUANT
+# DOWNLOAD SI MANQUANT
 # ============================================
 
 if not os.path.exists(MODEL_NAME):
-    st.warning("⚠️ Modèle introuvable, téléchargement en cours...")
-    
+    st.warning("⚠️ Modèle introuvable, téléchargement...")
+
     try:
         gdown.download(GDRIVE_URL, MODEL_NAME, quiet=False)
-        st.success("✅ Modèle téléchargé avec succès")
+        st.success("✅ Modèle téléchargé")
     except Exception as e:
-        st.error("❌ Erreur téléchargement modèle : " + str(e))
+        st.error("❌ Erreur téléchargement : " + str(e))
 
 # ============================================
-# VERIFICATION FICHIER
-# ============================================
-
-if os.path.exists(MODEL_NAME):
-    st.write("✅ Fichier trouvé")
-    st.write("📦 Taille :", os.path.getsize(MODEL_NAME), "bytes")
-else:
-    st.error("❌ Fichier toujours introuvable !")
-
-# ============================================
-# LOAD MODEL (OPTIMISÉ)
+# LOAD MODEL (SECURISE)
 # ============================================
 
 @st.cache_resource
@@ -53,19 +42,24 @@ def load_fruit_model():
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, MODEL_NAME)
-        
-        st.write("📍 Chargement modèle depuis :", model_path)
-        
+
+        if not os.path.exists(model_path):
+            st.error("❌ Modèle toujours introuvable après vérification")
+            return None
+
+        st.write("📍 Chargement depuis :", model_path)
+
         model = load_model(model_path)
-        st.success("✅ Modèle chargé avec succès")
+        st.success("✅ Modèle chargé")
+
         return model
-    
+
     except Exception as e:
-        st.error("❌ Erreur chargement modèle : " + str(e))
+        st.error("❌ Erreur chargement : " + str(e))
         return None
 
 # ============================================
-# INTERFACE
+# UI
 # ============================================
 
 st.title("🍎 Fruit Classifier")
@@ -74,26 +68,26 @@ uploaded = st.file_uploader("📤 Upload une image", type=["jpg", "png", "jpeg"]
 
 model = None
 
+# 👉 IMPORTANT : charger seulement ici
 if uploaded:
-    # Charger modèle seulement quand nécessaire
     if model is None:
         model = load_fruit_model()
 
     if model is not None:
         try:
             img = Image.open(uploaded).resize((224, 224))
-            st.image(img, caption="📸 Image chargée")
+            st.image(img, caption="📸 Image")
 
             img_array = np.array(img) / 255.0
             img_array = np.expand_dims(img_array, axis=0)
 
             prediction = model.predict(img_array)
 
-            st.write("🔢 Résultat brut :", prediction)
+            st.write("🔢 Résultat :", prediction)
 
             predicted_class = np.argmax(prediction)
 
-            st.success(f"✅ Classe prédite : {predicted_class}")
+            st.success(f"✅ Classe : {predicted_class}")
 
         except Exception as e:
             st.error("❌ Erreur prédiction : " + str(e))
