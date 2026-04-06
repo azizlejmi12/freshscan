@@ -12,7 +12,6 @@ import gdown
 MODEL_NAME = "best_model_phase1.keras"
 
 # 👉 (OPTIONNEL) lien Google Drive si problème Railway
-# remplace par ton lien si nécessaire
 GDRIVE_URL = "https://drive.google.com/file/d/1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA/view?usp=sharing"
 
 # ============================================
@@ -20,19 +19,35 @@ GDRIVE_URL = "https://drive.google.com/file/d/1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA/
 # ============================================
 
 st.write("📁 Fichiers dans le dossier :", os.listdir("."))
+st.write("📁 Chemin absolu :", os.path.abspath("."))
 
 # ============================================
-# TELECHARGEMENT SI MANQUANT
+# TELECHARGEMENT SI MANQUANT (avec conversion ID)
 # ============================================
+
+def download_from_gdrive(url, output):
+    """Télécharge depuis Google Drive en gérant les fichiers larges"""
+    try:
+        # Convertir lien de partage en lien de téléchargement direct
+        if "drive.google.com/file/d/" in url:
+            file_id = url.split("/d/")[1].split("/")[0]
+            direct_url = f"https://drive.google.com/uc?id={file_id}"
+        else:
+            direct_url = url
+            
+        gdown.download(direct_url, output, quiet=False)
+        return True
+    except Exception as e:
+        st.error(f"❌ Erreur téléchargement : {str(e)}")
+        return False
 
 if not os.path.exists(MODEL_NAME):
-    st.warning("⚠️ Modèle introuvable, téléchargement en cours...")
+    st.warning(f"⚠️ {MODEL_NAME} introuvable, téléchargement en cours...")
     
-    try:
-        gdown.download(GDRIVE_URL, MODEL_NAME, quiet=False)
+    if download_from_gdrive(GDRIVE_URL, MODEL_NAME):
         st.success("✅ Modèle téléchargé avec succès")
-    except Exception as e:
-        st.error("❌ Erreur téléchargement modèle : " + str(e))
+    else:
+        st.error("❌ Échec du téléchargement")
 
 # ============================================
 # VERIFICATION FICHIER
@@ -45,23 +60,28 @@ else:
     st.error("❌ Fichier toujours introuvable !")
 
 # ============================================
-# LOAD MODEL (OPTIMISÉ)
+# LOAD MODEL (CORRIGÉ)
 # ============================================
 
 @st.cache_resource
 def load_fruit_model():
+    # Utiliser le chemin relatif simple (WORKDIR /app dans Docker)
+    model_path = MODEL_NAME  # Pas besoin de chemin absolu complexe
+    
+    st.write("📍 Chargement modèle depuis :", os.path.abspath(model_path))
+    
+    if not os.path.exists(model_path):
+        st.error(f"❌ Modèle introuvable : {model_path}")
+        # Liste tous les fichiers pour debug
+        st.write("📁 Fichiers disponibles :", os.listdir("."))
+        return None
+    
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(base_dir, MODEL_NAME)
-        
-        st.write("📍 Chargement modèle depuis :", model_path)
-        
         model = load_model(model_path)
         st.success("✅ Modèle chargé avec succès")
         return model
-    
     except Exception as e:
-        st.error("❌ Erreur chargement modèle : " + str(e))
+        st.error(f"❌ Erreur chargement modèle : {str(e)}")
         return None
 
 # ============================================
@@ -72,13 +92,9 @@ st.title("🍎 Fruit Classifier")
 
 uploaded = st.file_uploader("📤 Upload une image", type=["jpg", "png", "jpeg"])
 
-model = None
-
 if uploaded:
-    # Charger modèle seulement quand nécessaire
-    if model is None:
-        model = load_fruit_model()
-
+    model = load_fruit_model()
+    
     if model is not None:
         try:
             img = Image.open(uploaded).resize((224, 224))
@@ -88,12 +104,12 @@ if uploaded:
             img_array = np.expand_dims(img_array, axis=0)
 
             prediction = model.predict(img_array)
-
             st.write("🔢 Résultat brut :", prediction)
 
             predicted_class = np.argmax(prediction)
-
             st.success(f"✅ Classe prédite : {predicted_class}")
 
         except Exception as e:
             st.error("❌ Erreur prédiction : " + str(e))
+    else:
+        st.error("❌ Impossible de charger le modèle")
