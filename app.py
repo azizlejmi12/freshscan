@@ -205,8 +205,15 @@ BAR_COLORS = {
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_fruit_model():
+    import zipfile
     if not os.path.exists(model_path):
         st.error(f"❌ Modèle introuvable : {model_path}")
+        st.stop()
+    # Vérifier que c'est un vrai fichier .keras et pas un HTML
+    try:
+        zipfile.ZipFile(model_path)
+    except zipfile.BadZipFile:
+        st.error("❌ Le fichier .keras est corrompu (probablement un HTML de Google Drive)")
         st.stop()
     return load_model(model_path)
 
