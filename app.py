@@ -1,6 +1,4 @@
 import os
-
-model_path = 'best_model_phase1.keras'
 import streamlit as st
 import numpy as np
 from tensorflow.keras.models import load_model
@@ -10,8 +8,10 @@ import plotly.graph_objects as go
 import time
 
 # ─────────────────────────────────────────────
-#  CONFIG PAGE
+#  CONFIG
 # ─────────────────────────────────────────────
+model_path = '/app/best_model_phase1.keras'
+
 st.set_page_config(
     page_title="FreshScan — Détecteur de fruits",
     page_icon="🍎",
@@ -20,155 +20,59 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-#  CSS PERSONNALISÉ
+#  CSS
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-}
-.stApp {
-    background: #0a0a0f;
-    color: #f0ede8;
-}
-.main-header {
-    text-align: center;
-    padding: 2.5rem 0 1rem 0;
-}
+html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+.stApp { background: #0a0a0f; color: #f0ede8; }
+.main-header { text-align: center; padding: 2.5rem 0 1rem 0; }
 .main-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 3.2rem;
-    font-weight: 800;
+    font-family: 'Syne', sans-serif; font-size: 3.2rem; font-weight: 800;
     letter-spacing: -2px;
     background: linear-gradient(135deg, #a8ff78, #78ffd6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    line-height: 1;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin: 0; line-height: 1;
 }
 .main-subtitle {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1rem;
-    color: #888;
-    margin-top: 0.5rem;
-    font-weight: 300;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; color: #888;
+    margin-top: 0.5rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase;
 }
-.result-card {
-    border-radius: 20px;
-    padding: 2rem;
-    margin: 1.5rem 0;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-.result-card.comestible {
-    background: linear-gradient(135deg, #0d2b1a, #0a1f12);
-    border: 1.5px solid #2ecc71;
-}
-.result-card.non-comestible {
-    background: linear-gradient(135deg, #2b0d0d, #1f0a0a);
-    border: 1.5px solid #e74c3c;
-}
-.verdict-emoji {
-    font-size: 4rem;
-    margin-bottom: 0.5rem;
-    display: block;
-}
-.verdict-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-}
+.result-card { border-radius: 20px; padding: 2rem; margin: 1.5rem 0; text-align: center; }
+.result-card.comestible { background: linear-gradient(135deg, #0d2b1a, #0a1f12); border: 1.5px solid #2ecc71; }
+.result-card.non-comestible { background: linear-gradient(135deg, #2b0d0d, #1f0a0a); border: 1.5px solid #e74c3c; }
+.verdict-emoji { font-size: 4rem; margin-bottom: 0.5rem; display: block; }
+.verdict-text { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
 .verdict-text.comestible { color: #2ecc71; }
 .verdict-text.non-comestible { color: #e74c3c; }
 .class-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 50px;
-    padding: 0.4rem 1.2rem;
-    font-size: 0.9rem;
-    color: #ccc;
-    margin-top: 0.8rem;
-    letter-spacing: 1px;
-    font-weight: 500;
+    display: inline-block; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 50px;
+    padding: 0.4rem 1.2rem; font-size: 0.9rem; color: #ccc;
+    margin-top: 0.8rem; letter-spacing: 1px; font-weight: 500;
 }
-.confidence-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
-    color: #888;
-    margin-top: 0.5rem;
-}
-.confidence-value {
-    color: #f0ede8;
-    font-weight: 700;
-}
-.info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-.info-card {
-    background: #13131a;
-    border: 1px solid #1e1e2e;
-    border-radius: 14px;
-    padding: 1.2rem;
-    text-align: center;
-}
+.confidence-text { font-family: 'Syne', sans-serif; font-size: 1.1rem; color: #888; margin-top: 0.5rem; }
+.confidence-value { color: #f0ede8; font-weight: 700; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+.info-card { background: #13131a; border: 1px solid #1e1e2e; border-radius: 14px; padding: 1.2rem; text-align: center; }
 .info-icon { font-size: 1.8rem; }
-.info-title {
-    font-size: 0.7rem;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 0.4rem;
-}
-.info-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #f0ede8;
-    margin-top: 0.2rem;
-}
+.info-title { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.4rem; }
+.info-value { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; color: #f0ede8; margin-top: 0.2rem; }
 .stButton > button {
     background: linear-gradient(135deg, #a8ff78, #78ffd6) !important;
-    color: #0a0a0f !important;
-    border: none !important;
-    border-radius: 50px !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    padding: 0.6rem 2rem !important;
-    letter-spacing: 1px !important;
-    width: 100% !important;
-    transition: opacity 0.2s !important;
+    color: #0a0a0f !important; border: none !important; border-radius: 50px !important;
+    font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
+    font-size: 0.95rem !important; padding: 0.6rem 2rem !important;
+    letter-spacing: 1px !important; width: 100% !important; transition: opacity 0.2s !important;
 }
 .stButton > button:hover { opacity: 0.85 !important; }
 [data-testid="stFileUploader"] {
-    background: #13131a !important;
-    border-radius: 16px !important;
-    border: 1.5px dashed #2a2a3a !important;
-    padding: 1rem !important;
+    background: #13131a !important; border-radius: 16px !important;
+    border: 1.5px dashed #2a2a3a !important; padding: 1rem !important;
 }
-.divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #2a2a3a, transparent);
-    margin: 2rem 0;
-}
-.footer {
-    text-align: center;
-    color: #333;
-    font-size: 0.8rem;
-    padding: 2rem 0 1rem 0;
-    letter-spacing: 1px;
-}
+.divider { height: 1px; background: linear-gradient(90deg, transparent, #2a2a3a, transparent); margin: 2rem 0; }
+.footer { text-align: center; color: #333; font-size: 0.8rem; padding: 2rem 0 1rem 0; letter-spacing: 1px; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 0 !important; }
 </style>
@@ -205,17 +109,13 @@ BAR_COLORS = {
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_fruit_model():
-    import zipfile
     if not os.path.exists(model_path):
         st.error(f"❌ Modèle introuvable : {model_path}")
-        st.stop()
-    # Vérifier que c'est un vrai fichier .keras et pas un HTML
-    try:
-        zipfile.ZipFile(model_path)
-    except zipfile.BadZipFile:
-        st.error("❌ Le fichier .keras est corrompu (probablement un HTML de Google Drive)")
+        st.write("📁 Fichiers dans /app :", os.listdir('/app'))
         st.stop()
     return load_model(model_path)
+
+model = load_fruit_model()
 
 # ─────────────────────────────────────────────
 #  PRÉDICTION
@@ -233,8 +133,6 @@ def predict(img_pil, model):
 # ─────────────────────────────────────────────
 #  INTERFACE
 # ─────────────────────────────────────────────
-
-# Header
 st.markdown("""
 <div class="main-header">
     <p class="main-title">FreshScan</p>
@@ -242,7 +140,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Infos modèle
 st.markdown("""
 <div class="info-grid">
     <div class="info-card">
@@ -265,7 +162,6 @@ st.markdown("""
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# Upload
 uploaded = st.file_uploader(
     "Dépose une photo de fruit ici",
     type=["jpg", "jpeg", "png", "webp"],
@@ -273,7 +169,6 @@ uploaded = st.file_uploader(
 )
 
 if uploaded:
-    model   = load_fruit_model()
     img_pil = Image.open(uploaded).convert("RGB")
 
     col1, col2 = st.columns([1, 1], gap="medium")
@@ -327,11 +222,8 @@ if uploaded:
         plot_bgcolor='#13131a',
         font=dict(family='DM Sans', color='#888'),
         xaxis=dict(
-            showgrid=True,
-            gridcolor='#1e1e2e',
-            range=[0, 110],
-            ticksuffix='%',
-            color='#555'
+            showgrid=True, gridcolor='#1e1e2e',
+            range=[0, 110], ticksuffix='%', color='#555'
         ),
         yaxis=dict(color='#aaa', tickfont=dict(size=13)),
         margin=dict(l=10, r=40, t=20, b=20),
@@ -359,7 +251,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Footer
 st.markdown("""
 <div class="footer">
     FRESHSCAN · MOBILENETV2 · TRANSFER LEARNING · 99.86% ACCURACY
