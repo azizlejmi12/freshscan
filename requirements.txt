@@ -1,6 +1,6 @@
-streamlit==1.32.0
-tensorflow==2.15.0
-numpy==1.26.4
-pillow==10.4.0
-plotly
-gdown
+streamlit>=1.40.0
+tensorflow==2.16.1
+numpy>=1.26.4,<2.0
+Pillow>=10.0.0
+plotly>=5.18.0
+gdown>=5.1.0

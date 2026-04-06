@@ -1,16 +1,6 @@
-import gdown
 import os
 
-# ─────────────────────────────────────────────
-#  TÉLÉCHARGEMENT AUTOMATIQUE DU MODÈLE
-# ─────────────────────────────────────────────
 model_path = 'best_model_phase1.h5'
-if not os.path.exists(model_path):
-    print("⬇️ Téléchargement du modèle depuis Google Drive...")
-    file_id = "1E6AQE-DnggKsVgMI-4oKBm5cCCqWMyXh"
-    url = f"https://drive.google.com/uc?id={file_id}"
-    gdown.download(url, model_path, quiet=False)
-    print("✅ Modèle téléchargé !")
 
 import streamlit as st
 import numpy as np
