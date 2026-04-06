@@ -1,7 +1,6 @@
 import os
 
-model_path = 'best_model_phase1.h5'
-
+model_path = 'best_model_phase1.keras'
 import streamlit as st
 import numpy as np
 from tensorflow.keras.models import load_model
