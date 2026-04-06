@@ -12,6 +12,7 @@ import gdown
 MODEL_NAME = "best_model_phase1.keras"
 
 # 👉 (OPTIONNEL) lien Google Drive si problème Railway
+# ATTENTION : Pas d'espace à la fin !
 GDRIVE_URL = "https://drive.google.com/file/d/1Pdo2SjtoEpoIVgRBkti3iFXJrF_5vyCA/view?usp=sharing"
 
 # ============================================
@@ -31,6 +32,7 @@ def download_from_gdrive(url, output):
         # Convertir lien de partage en lien de téléchargement direct
         if "drive.google.com/file/d/" in url:
             file_id = url.split("/d/")[1].split("/")[0]
+            # ATTENTION : Pas d'espace après id=
             direct_url = f"https://drive.google.com/uc?id={file_id}"
         else:
             direct_url = url
