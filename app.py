@@ -10,7 +10,7 @@ import time
 # ─────────────────────────────────────────────
 #  CONFIG
 # ─────────────────────────────────────────────
-model_path = 'best_model_phase1.keras'
+model_path = 'best_model_phase1.h5'
 st.set_page_config(
     page_title="FreshScan — Détecteur de fruits",
     page_icon="🍎",
@@ -109,7 +109,7 @@ BAR_COLORS = {
 @st.cache_resource
 def load_fruit_model():
     # On force le chemin absolu pour Railway
-    absolute_path = os.path.join(os.getcwd(), 'best_model_phase1.keras')
+    absolute_path = os.path.join(os.getcwd(), 'best_model_phase1.h5')
     
     if not os.path.exists(absolute_path):
         st.error(f"❌ Fichier inexistant à : {absolute_path}")
