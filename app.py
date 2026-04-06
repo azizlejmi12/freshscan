@@ -10,8 +10,7 @@ import time
 # ─────────────────────────────────────────────
 #  CONFIG
 # ─────────────────────────────────────────────
-model_path = '/app/best_model_phase1.keras'
-
+model_path = 'best_model_phase1.keras'
 st.set_page_config(
     page_title="FreshScan — Détecteur de fruits",
     page_icon="🍎",
