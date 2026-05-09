@@ -1,0 +1,23 @@
+# Ignore local/dev artifacts from gcloud source uploads
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+.git/
+.gitignore
+.gitattributes
+
+# Do not upload notebooks or presentation deliverables
+*.ipynb
+poster_freshscan.html
+presentation_notes.txt
+report_figures/
+
+# Large training data should not be uploaded for app runtime
+dataset/
+
+# Keep model artifacts required at runtime
+!best_model_phase1.keras
+!best_model_phase1.h5

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Dataset and generated assets that should stay out of version control
+dataset/
+report_figures/
+poster_freshscan.html
+presentation_notes.txt
